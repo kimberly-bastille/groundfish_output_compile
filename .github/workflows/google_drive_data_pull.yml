@@ -1,9 +1,8 @@
-name: pull and process data from stocksmart website
+name: pull and process data from google drive
 
 on:
   schedule:
     # uses UTC/GMT time (+ 5 hrs)
-    ## put on HOLD until stockSMART have finished the reorganization
     ####- cron: "0 17 * * 3" # Every Wednesday at 1200 hrs = 1700 UTC
     #- cron: "0 */4 * * *" # Every 4th hour on
     #- cron: "0 6 * * *" # Every day at 1am EST = 0600 GMT
@@ -41,36 +40,30 @@ jobs:
 
       - name: Install packages
         run: |
-          install.packages(c("remotes","dplyr", "httr", "here","readxl", "usethis","kableExtra","rmarkdown","rlang"))
-          remotes::install_github("NOAA-EDAB/stocksmart")
+          install.packages(c("remotes","dplyr", "here","googledrive", "googlesheets4","rmarkdown","rlang"))
         shell: Rscript {0}
 
-      - name: Save current rdas
+
+      - name: Download from Google Drive
+        uses: satackey/action-google-drive@v1
+        with:
+         skicka-tokencache-json: ${{ secrets.SKICKA_TOKENCACHE_JSON }}
+         download-from: "shiny_output_data/"
+         download-to: ./
+
+    # For those who set up Google Drive API client ID and secret themselves
+    google-client-id: ${{ secrets.GOOGLE_CLIENT_ID }}
+    google-client-secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+    
+      - name: ingest data
         run: |
-          load(here::here("data/stockAssessmentSummary.rda"))
-          load(here::here("data/stockAssessmentData.rda"))
-          saveRDS(stockAssessmentSummary,here::here("data-raw/tempSummary.rds"))
-          saveRDS(stockAssessmentData,here::here("data-raw/tempData.rds"))
-          rm(stockAssessmentData)
-          rm(stockAssessmentSummary)
+          source(here::here("R/data_ingest_compile.R"))
         shell: Rscript {0}
 
-      - name: Pull stocksmart data
+      - name: display data
         run: |
           options(timeout = 60 * 60 * 6)
-          source(here::here("data-raw/query_stocksmart_api.R"))
-          query_stocksmart_api()
-        shell: Rscript {0}
-
-      - name: Process stocksmart data
-        run: |
-          options(timeout = 60 * 60 * 6)
-          source(here::here("data-raw/process_stocksmart_ts_data.R"))
-          out <- process_stocksmart_ts_data(exportFile=TRUE,isRunLocal=F)
-          saveRDS(out$summaryData,here::here("data-raw/newSummary.rds"))
-          saveRDS(out$tsData,here::here("data-raw/newData.rds"))
-#         incorporate difference check (below) prior to writing to repo or save as RDS and
-#         and write to repo later
+          source(here::here("R/data_display.R"))
         shell: Rscript {0}
 
       - name: Compare current pull with existing
