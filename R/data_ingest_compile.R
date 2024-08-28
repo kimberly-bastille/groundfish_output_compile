@@ -7,8 +7,10 @@ library(googledrive)
 
 #If you have trouble getting access, use the following code and select 0 to get a new token - make sure to check the third box:
 #gs4_auth()
-
+print("start_ingest")
 dat_list <- googledrive::drive_ls("shiny_output_data")
+print("list of shiny out")
+print(dat_list)
 
 dat_all<- data.frame()
 for(i in 1:row(dat_list)){
