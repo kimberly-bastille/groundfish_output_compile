@@ -1,7 +1,7 @@
 name: pull and process data from google drive
 
-on:
-  schedule:
+#on:
+  #schedule:
     # uses UTC/GMT time (+ 5 hrs)
     ####- cron: "0 17 * * 3" # Every Wednesday at 1200 hrs = 1700 UTC
     #- cron: "0 */4 * * *" # Every 4th hour on
