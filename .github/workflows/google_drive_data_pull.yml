@@ -55,8 +55,8 @@ jobs:
          download-to: ./
 
         # For those who set up Google Drive API client ID and secret themselves
-        google-client-id: ${{ secrets.GOOGLE_CLIENT_ID }}
-        google-client-secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+        #google-client-id: ${{ secrets.GOOGLE_CLIENT_ID }}
+        #google-client-secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
     
       - name: ingest data
         run: |
