@@ -1,7 +1,5 @@
 name: pull and process data from google drive
 
-
-
 on:
   push:
     branches:
@@ -20,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_PAT: ${{ secrets.GH_RELEASE }}
-      R_REMOTES_NO_ERRORS_FROM_WARNINGS: false
+      #R_REMOTES_NO_ERRORS_FROM_WARNINGS: false
 
     steps:
       - name: Checkout repo
