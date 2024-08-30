@@ -17,7 +17,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      GITHUB_PAT: ${{ secrets.GH_RELEASE }}
+      #GITHUB_PAT: ${{ secrets.GH_RELEASE }}
       #R_REMOTES_NO_ERRORS_FROM_WARNINGS: false
 
     steps:
@@ -36,62 +36,60 @@ jobs:
 #          sudo apt-get install  libgdal-dev libcurl4-gnutls-dev libgit2-dev libudunits2-dev libharfbuzz-dev libfribidi-dev
         shell: bash
 
-      - name: Set up R
-        uses: r-lib/actions/setup-r@v2
+      # - name: Set up R
+      #   uses: r-lib/actions/setup-r@v2
+      #   with:
+      #     r-version: '4.2.0'
+      # 
+      # - name: Install packages
+      #   run: |
+      #     install.packages(c("remotes","dplyr", "here","googledrive", "googlesheets4","rmarkdown","rlang"))
+      #   shell: Rscript {0}
+##################################################################################################
+    ### code from this website https://github.com/pew-actions/google-drive-download
+     - name: Acquire Google access token
+        id: google-access-token
+        uses: playeveryware/action-google-access-token@v1
         with:
-          r-version: '4.2.0'
+          credentials: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_CREDENTIALS }}
+          scope: 'https://www.googleapis.com/auth/drive.readonly'
 
-      - name: Install packages
-        run: |
-          install.packages(c("remotes","dplyr", "here","googledrive", "googlesheets4","rmarkdown","rlang"))
-        shell: Rscript {0}
-
-
-      - name: Download from Google Drive
-        uses: satackey/action-google-drive@v1
+      - name: Download file
+        uses: playeveryware/action-google-drive-download@v1
         with:
-         skicka-tokencache-json: ${{ secrets.SKICKA_TOKENCACHE_JSON }}
-         download-from: "shiny_output_data/"
-         download-to: ./
+          token: ${{ steps.google-access-token.outputs.token }}
+          file-url: 'https://drive.google.com/drive/u/1/folders/1GYVEnqPp_2nJcebNgrTRRyLT4o8Rwxxf'
+          path: test.bin
+###########################################################################################################
+      # - name: Download from Google Drive
+      #   uses: satackey/action-google-drive@v1
+      #   with:
+      #    skicka-tokencache-json: ${{ secrets.SKICKA_TOKENCACHE_JSON }}
+      #    download-from: "shiny_output_data/"
+      #    download-to: ./
+      # 
+      #   # For those who set up Google Drive API client ID and secret themselves
+      #   #google-client-id: ${{ secrets.GOOGLE_CLIENT_ID }}
+      #   #google-client-secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      # 
+      # - name: ingest data
+      #   run: |
+      #     source(here::here("R/data_ingest_compile.R"))
+      #   shell: Rscript {0}
+      # 
+      # - name: display data
+      #   run: |
+      #     options(timeout = 60 * 60 * 6)
+      #     source(here::here("R/data_display.R"))
+      #   shell: Rscript {0}
 
-        # For those who set up Google Drive API client ID and secret themselves
-        #google-client-id: ${{ secrets.GOOGLE_CLIENT_ID }}
-        #google-client-secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-    
-      - name: ingest data
-        run: |
-          source(here::here("R/data_ingest_compile.R"))
-        shell: Rscript {0}
+     
 
-      - name: display data
-        run: |
-          options(timeout = 60 * 60 * 6)
-          source(here::here("R/data_display.R"))
-        shell: Rscript {0}
-
-      - name: Compare current pull with existing
-      # creates an rmd to send as email
-      # adds content to news.md
-      # increments package version in description
-        run: |
-          options(timeout = 60 * 60 * 6)
-          source(here::here("data-raw/compareData.r"))
-          source(here::here("data-raw/update_description.R"))
-          source(here::here("data-raw/update_news.R"))
-          diffs <- compareData()
-          version <- update_description(diffs,digit=3)
-          update_news(version,diffs)
-          rmarkdown::render(here::here("data-raw/sendAsEmail.Rmd"),
-                    params = diffs)
-
-          saveRDS(version,here::here("data-raw/version.rds"))
-        shell: Rscript {0}
-
-      - name: render readme.rmd
-        run: |
-          options(timeout = 60 * 60 * 6)
-          rmarkdown::render(here::here("README.Rmd"))
-        shell: Rscript {0}
+      # - name: render readme.rmd
+      #   run: |
+      #     options(timeout = 60 * 60 * 6)
+      #     rmarkdown::render(here::here("README.Rmd"))
+      #   shell: Rscript {0}
 
       #- name: Find differences
       # Create text explaining differences and append to news.md and release notes
@@ -100,44 +98,24 @@ jobs:
       # Create text explaining differences and append to news.md and release notes
 
       # Send email indicating if anything has changed
-      - name: Send email
-        uses: dawidd6/action-send-mail@v3
 
-        with:
-          server_address: smtp.gmail.com
-          server_port: 465
+      # - name: commit data files
+      #   run: |
+      #     git config user.name github-actions
+      #     git config user.email github-actions@github.com
+      #     git add data/stockAssessmentData.rda
+      #     git add data/stockAssessmentSummary.rda
+      #     git add data-raw/datapull.txt
+      #     git add README.md
+      #     git add NEWS.md
+      #     git add DESCRIPTION
+      #     git commit -m "automated commit from api yml"
+      #     git push
 
-          username: ${{ secrets.MAIL_USERNAME }}
-          password: ${{ secrets.MAIL_PASSWORD }}
-
-          subject: Github Actions job result
-          to: andrew.beet@noaa.gov
-
-          from: Stocksmart GitHub
-
-          #body: file://${{github.workspace}}/data-raw/datapull.txt
-
-          html_body: file://${{github.workspace}}/data-raw/sendAsEmail.html
-
-          #attachments: ./data-raw/sendAsEmail.html
-
-      - name: commit data files
-        run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git add data/stockAssessmentData.rda
-          git add data/stockAssessmentSummary.rda
-          git add data-raw/datapull.txt
-          git add README.md
-          git add NEWS.md
-          git add DESCRIPTION
-          git commit -m "automated commit from api yml"
-          git push
-
-      - name: create gh-release
-        run: |
-            version <- readRDS(here::here("data-raw/version.rds"))
-            if(!is.null(version)){
-            usethis::use_github_release(publish = T)
-            }
-        shell: Rscript {0}
+      # - name: create gh-release
+      #   run: |
+      #       version <- readRDS(here::here("data-raw/version.rds"))
+      #       if(!is.null(version)){
+      #       usethis::use_github_release(publish = T)
+      #       }
+      #   shell: Rscript {0}
